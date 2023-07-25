@@ -1,18 +1,23 @@
 package qr
 
 import (
-	"bytes"
 	"fmt"
 	"image"
-	"image/png"
-	"os"
 )
 
 type Renderer interface {
 	Render(data []byte) (image.Image, error)
 }
 
-func EncodeBytes(errorCorrectionLevel ErrorCorrectionLevel, maskID int, value []byte, renderer Renderer, destFile string) error {
+func EncodeBytes(errorCorrectionLevel ErrorCorrectionLevel, maskID int, value []byte) ([]byte, error) {
+	if errorCorrectionLevel < 0 || errorCorrectionLevel > 3 {
+		return nil, fmt.Errorf("errorCorrectionLevel must be between 0 and 3")
+	}
+
+	if maskID < 0 || maskID > 7 {
+		return nil, fmt.Errorf("maskID must be between 0 and 7")
+	}
+
 	b := &bitwise{}
 	b.addBytes(value)
 
@@ -20,7 +25,7 @@ func EncodeBytes(errorCorrectionLevel ErrorCorrectionLevel, maskID int, value []
 
 	version = calcVersion(errorCorrectionLevel, len(value)*8)
 	if version < 0 {
-		return fmt.Errorf("data is too big")
+		return nil, fmt.Errorf("data is too big")
 	}
 
 	for {
@@ -32,7 +37,7 @@ func EncodeBytes(errorCorrectionLevel ErrorCorrectionLevel, maskID int, value []
 
 		version++
 		if version > 40 {
-			return fmt.Errorf("data is too big")
+			return nil, fmt.Errorf("data is too big")
 		}
 	}
 
@@ -72,17 +77,5 @@ func EncodeBytes(errorCorrectionLevel ErrorCorrectionLevel, maskID int, value []
 
 	data := bl.build(result, maskID, errorCorrectionLevel, version)
 
-	img, errRender := renderer.Render(data)
-	if errRender != nil {
-		return fmt.Errorf("render error: %w", errRender)
-	}
-
-	w := bytes.NewBuffer(nil)
-
-	errEncode := png.Encode(w, img)
-	if errEncode != nil {
-		return fmt.Errorf("encode to png error: %w", errEncode)
-	}
-
-	return os.WriteFile(destFile, w.Bytes(), 0644)
+	return data, nil
 }
