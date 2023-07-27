@@ -168,9 +168,12 @@ func (r *builder) addData(data []byte, mask int) {
 				isSet = !isSet
 			}
 
+			vv := byte(0)
 			if isSet {
-				r.set(x, y, 1)
+				vv = 1
 			}
+
+			r.set(x, y, vv)
 		}
 	}
 }

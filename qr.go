@@ -2,12 +2,7 @@ package qr
 
 import (
 	"fmt"
-	"image"
 )
-
-type Renderer interface {
-	Render(data []byte) (image.Image, error)
-}
 
 func EncodeBytes(errorCorrectionLevel ErrorCorrectionLevel, maskID int, value []byte) ([]byte, error) {
 	if errorCorrectionLevel < 0 || errorCorrectionLevel > 3 {
