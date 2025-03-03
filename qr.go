@@ -1,8 +1,36 @@
 package qr
 
 import (
+	"bytes"
 	"fmt"
+	"image"
+	"image/png"
+	"os"
 )
+
+func MakeImage(src []byte) (image.Image, error) {
+	d, e := EncodeBytes(ErrorCorrectionLevelM, 0, src)
+	if e != nil {
+		return nil, e
+	}
+	return renderImage(d)
+}
+
+func SaveImage(src []byte, filename string) error {
+	img, e := MakeImage(src)
+	if e != nil {
+		return e
+	}
+
+	w := bytes.NewBuffer(nil)
+
+	errEncode := png.Encode(w, img)
+	if errEncode != nil {
+		return errEncode
+	}
+
+	return os.WriteFile(filename, w.Bytes(), 0644)
+}
 
 func EncodeBytes(errorCorrectionLevel ErrorCorrectionLevel, maskID int, value []byte) ([]byte, error) {
 	if errorCorrectionLevel < 0 || errorCorrectionLevel > 3 {
